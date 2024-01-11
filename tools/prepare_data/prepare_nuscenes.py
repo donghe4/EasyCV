@@ -7,10 +7,13 @@ from typing import List, Tuple, Union
 
 import mmcv
 import numpy as np
-from nuscenes.nuscenes import NuScenes
-from nuscenes.utils.geometry_utils import view_points
 from pyquaternion import Quaternion
 from shapely.geometry import MultiPoint, box
+
+from nuscenes.nuscenes import NuScenes
+from nuscenes.can_bus.can_bus_api import NuScenesCanBus
+from nuscenes.utils.geometry_utils import view_points
+from nuscenes.utils import splits
 
 # from mmdet3d.core.bbox.box_np_ops import points_cam2img as _points_cam2img
 from easycv.core.bbox import points_cam2img
@@ -24,7 +27,6 @@ nus_attributes = ('cycle.with_rider', 'cycle.without_rider',
                   'pedestrian.moving', 'pedestrian.standing',
                   'pedestrian.sitting_lying_down', 'vehicle.moving',
                   'vehicle.parked', 'vehicle.stopped', 'None')
-
 
 def create_nuscenes_infos(root_path,
                           out_path,
@@ -44,12 +46,8 @@ def create_nuscenes_infos(root_path,
         max_sweeps (int): Max number of sweeps.
             Default: 10
     """
-    from nuscenes.nuscenes import NuScenes
-    from nuscenes.can_bus.can_bus_api import NuScenesCanBus
-    print(version, root_path)
     nusc = NuScenes(version=version, dataroot=root_path, verbose=True)
     nusc_can_bus = NuScenesCanBus(dataroot=can_bus_root_path)
-    from nuscenes.utils import splits
     available_vers = ['v1.0-trainval', 'v1.0-test', 'v1.0-mini']
     assert version in available_vers
     if version == 'v1.0-trainval':
@@ -713,18 +711,17 @@ def nuscenes_data_prep(root_path,
         # create_groundtruth_database(dataset_name, root_path, info_prefix,
         #                             f'{out_dir}/{info_prefix}_infos_train.pkl')
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description='prepare nuscenes datasets')
     parser.add_argument(
         '--root-path',
         type=str,
-        default='./data/nuscenes',
+        default='/data/nuscenes',
         help='specify the root path of dataset')
     parser.add_argument(
         '--canbus_root_path',
         type=str,
-        default='./data',
+        default='/data/nuscenes',
         help='specify the root path of nuScenes canbus')
     parser.add_argument(
         '--version',
@@ -735,7 +732,7 @@ def parse_args():
     parser.add_argument(
         '--out_dir',
         type=str,
-        default='./data/nuscenes',
+        default='/data/nuscenes',
         required=False,
         help='output save path')
     parser.add_argument(
@@ -768,6 +765,7 @@ def main(args):
             version=train_version,
             out_dir=args.out_dir,
             max_sweeps=args.max_sweeps)
+        
         test_version = f'{args.version}-test'
         nuscenes_data_prep(
             root_path=args.root_path,
@@ -780,12 +778,5 @@ def main(args):
 
 if __name__ == '__main__':
     args = parse_args()
-
-    base_data_dir = 'data/nuScenes/'
-
     args.version = 'v1.0'
-    args.canbus_root_path = base_data_dir
-    args.root_path = base_data_dir + 'nuscenes-v1.0/'
-    args.out_dir = base_data_dir + 'nuscenes-v1.0/'
-
     main(args)
